@@ -6,7 +6,7 @@ import (
 	"github.com/mercadolibre/myml/src/api/utils/apierrors"
 	"net/http"
 	"strconv"
-	)
+)
 
 /*func User (context *gin.Context) {
 
@@ -22,16 +22,15 @@ const (
 	paramUserID = "id"
 )
 
-
 // el controlador no puede devolver nada, ni errores
-func GetUser (c *gin.Context)  {
+func GetUser(c *gin.Context) {
 
 	userID := c.Param(paramUserID)
 	id, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
 		apiErr := &apierrors.ApiError{
 			Message: err.Error(),
-			Status: http.StatusBadRequest,
+			Status:  http.StatusBadRequest,
 		}
 		c.JSON(apiErr.Status, apiErr)
 		return
@@ -46,25 +45,24 @@ func GetUser (c *gin.Context)  {
 	c.JSON(http.StatusOK, user)
 }
 
-
-func GetInfo (c *gin.Context)  {
+func GetInfo(c *gin.Context) {
 
 	userID := c.Param(paramUserID)
 	id, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
 		apiErr := &apierrors.ApiError{
 			Message: err.Error(),
-			Status: http.StatusBadRequest,
+			Status:  http.StatusBadRequest,
 		}
 		c.JSON(apiErr.Status, apiErr)
 		return
 	}
 
-	user, apiErr := myml.GetInfoUser(id)
+	general, apiErr := myml.GetGeneralInfo(id)
 	if apiErr != nil {
 		c.JSON(apiErr.Status, apiErr)
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, *general)
 }

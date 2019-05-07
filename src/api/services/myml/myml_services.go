@@ -1,8 +1,11 @@
 package myml
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/mercadolibre/myml/src/api/domain/myml"
 	"github.com/mercadolibre/myml/src/api/utils/apierrors"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -70,7 +73,7 @@ func GetUserFromAPI(userID int64) (*myml.User, *apierrors.ApiError) {
 	if userID == 0 {
 		return nil, &apierrors.ApiError{
 			Message: "userId id empty",
-			Status: http.StatusBadRequest,
+			Status:  http.StatusBadRequest,
 		}
 	}
 
@@ -83,36 +86,49 @@ func GetUserFromAPI(userID int64) (*myml.User, *apierrors.ApiError) {
 	if err != nil {
 		return nil, &apierrors.ApiError{
 			Message: "Error en el GET",
-			Status: http.StatusInternalServerError,
+			Status:  http.StatusInternalServerError,
 		}
 	}
 
 	return user, nil
 }
 
+func GetGeneralInfo(userID int64) (*myml.User, *apierrors.ApiError) {
 
-
-func GetInfoUser(userID int64) (*myml.User, *apierrors.ApiError) {
+	urlUser := "https://api.mercadolibre.com/users/"
+	final := fmt.Sprintf("%s%d", urlUser, userID)
 
 	if userID == 0 {
 		return nil, &apierrors.ApiError{
 			Message: "userId id empty",
-			Status: http.StatusBadRequest,
+			Status:  http.StatusBadRequest,
 		}
 	}
 
-	user := &myml.User{
-		ID: int(userID),
-	}
-
-	err := user.Get()
-
+	response, err := http.Get(final)
+	user := myml.User{}
 	if err != nil {
 		return nil, &apierrors.ApiError{
-			Message: "Error en el GET",
-			Status: http.StatusInternalServerError,
+			Message: err.Error(),
+			Status:  http.StatusInternalServerError,
 		}
 	}
 
-	return user, nil
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, &apierrors.ApiError{
+			Message: err.Error(),
+			Status:  http.StatusInternalServerError,
+		}
+	}
+
+	// esto se hace para que la variable err no esté viva al pedo en la ejecucion, ya que solo se usa en el IF
+	if err := json.Unmarshal([]byte(data), &user); err != nil {
+		return nil, &apierrors.ApiError{
+			Message: err.Error(),
+			Status:  http.StatusInternalServerError,
+		}
+	}
+
+	return &user, nil
 }

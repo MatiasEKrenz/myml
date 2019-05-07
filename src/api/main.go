@@ -12,7 +12,7 @@ const (
 	port = ":8080"
 )
 
-var(
+var (
 	//aca tiene en cuenta la mayuscula para que sea publica
 	// en var, se puede cambiar el valor pero no el tipo de datos
 
@@ -20,8 +20,7 @@ var(
 	router = gin.Default()
 )
 
-
-func main()  {
+func main() {
 	//aca tiene en cuenta la mayuscula para que sea publica
 
 	// pongo la funcion sin parentesis porque no tengo que ejecutar la funcion ahora, solo le paso la funcion como parametro
@@ -29,16 +28,13 @@ func main()  {
 
 	//router.GET("/users/:id", myml.User)
 
-	router.GET("/users/:id", myml.GetUser)
+	//router.GET("/users/:id", myml.GetUser)
 
-	router.GET("/users/:id/site", myml.GetInfo)
-
+	router.GET("/myml/:id", myml.GetInfo)
 
 	router.Run(port)
 
 }
-
-
 
 // USER_ID: 152581223
 // https://api.mercadolibre.com/users/USER_ID
