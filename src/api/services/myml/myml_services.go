@@ -14,7 +14,7 @@ const (
 	urlApi  = "https://api.mercadolibre.com/"
 	urlMock = "http://localhost:8081/"
 
-	urlAUsar = urlApi
+	urlAUsar = urlMock
 )
 
 /*func GetUsersParams(id string) myml.User {
@@ -274,7 +274,7 @@ func getCurrencies(countryId string, wg *sync.WaitGroup) *myml.General {
 		}
 	}
 
-	final = fmt.Sprintf("%s%s", urlAUsar, country.CurrencyID)
+	final = fmt.Sprintf("%scurrencies/%s", urlAUsar, country.CurrencyID)
 
 	fmt.Println("CLA3:" + final)
 
