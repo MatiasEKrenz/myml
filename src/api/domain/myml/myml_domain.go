@@ -1,7 +1,9 @@
 package myml
 
+import "github.com/mercadolibre/myml/src/api/utils/apierrors"
+
 type General struct {
-	ID       int       `json:"id"`
-	Category *Category `json:"category"`
-	Currency *Currency `json:"currency"`
+	Category *Category           `json:"categories"`
+	Currency *Currency           `json:"currency"`
+	Errores  *apierrors.ApiError `json:"error"`
 }

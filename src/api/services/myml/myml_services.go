@@ -7,6 +7,7 @@ import (
 	"github.com/mercadolibre/myml/src/api/utils/apierrors"
 	"io/ioutil"
 	"net/http"
+	"sync"
 )
 
 /*func GetUsersParams(id string) myml.User {
@@ -77,7 +78,7 @@ func GetUserFromAPI(userID int64) (*myml.User, *apierrors.ApiError) {
 		}
 	}
 
-	user := &myml.User{
+	user := myml.User{
 		ID: int(userID),
 	}
 
@@ -90,45 +91,206 @@ func GetUserFromAPI(userID int64) (*myml.User, *apierrors.ApiError) {
 		}
 	}
 
-	return user, nil
+	return &user, nil
 }
 
-func GetGeneralInfo(userID int64) (*myml.User, *apierrors.ApiError) {
+func GetGeneralInfo(userID int64) (*myml.General, *apierrors.ApiError) {
 
-	urlUser := "https://api.mercadolibre.com/users/"
-	final := fmt.Sprintf("%s%d", urlUser, userID)
-
-	if userID == 0 {
+	user, err := GetUserFromAPI(userID)
+	if err != nil {
 		return nil, &apierrors.ApiError{
-			Message: "userId id empty",
-			Status:  http.StatusBadRequest,
+			Message: "GetUserFromAPI failed",
+			Status:  http.StatusInternalServerError,
 		}
 	}
 
+	fmt.Println("llego hasta aca")
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	ch := make(chan *myml.General, 2)
+
+	//go routines
+	go func() { ch <- getCategories(user.SiteID, &wg) }()
+	go func() { ch <- getCurrencies(user.CountryID, &wg) }()
+
+	wg.Wait()
+	close(ch)
+	var MyMl myml.General
+
+	//for
+	for i := range ch {
+
+		if i.Category != nil {
+			MyMl.Category = i.Category
+			continue
+		}
+
+		if i.Currency != nil {
+			MyMl.Currency = i.Currency
+			continue
+		}
+
+		if i.Errores != nil {
+			return nil, &apierrors.ApiError{
+				Message: "Error in reply papa",
+				Status:  http.StatusInternalServerError,
+			}
+		}
+	}
+
+	return &MyMl, nil
+}
+
+func getCategories(siteId string, wg *sync.WaitGroup) *myml.General {
+
+	defer wg.Done()
+	url := "https://api.mercadolibre.com/sites/"
+	final := fmt.Sprintf("%s%s/categories", url, siteId)
+
+	fmt.Println("CLA1:" + final)
+
 	response, err := http.Get(final)
-	user := myml.User{}
+
+	var category myml.Category
+
 	if err != nil {
-		return nil, &apierrors.ApiError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
 		}
 	}
 
 	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, &apierrors.ApiError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
 		}
 	}
 
 	// esto se hace para que la variable err no esté viva al pedo en la ejecucion, ya que solo se usa en el IF
-	if err := json.Unmarshal([]byte(data), &user); err != nil {
-		return nil, &apierrors.ApiError{
-			Message: err.Error(),
-			Status:  http.StatusInternalServerError,
+	if err := json.Unmarshal([]byte(data), &category); err != nil {
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
 		}
 	}
 
-	return &user, nil
+	MyMl := myml.General{
+		Category: &category,
+	}
+
+	return &MyMl
+}
+
+func getCurrencies(countryId string, wg *sync.WaitGroup) *myml.General {
+
+	defer wg.Done()
+
+	url := "https://api.mercadolibre.com/classified_locations/countries/"
+	final := fmt.Sprintf("%s%s", url, countryId)
+
+	fmt.Println("CLA2:" + final)
+
+	response, err := http.Get(final)
+
+	country := myml.Country{}
+
+	if err != nil {
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
+		}
+	}
+
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
+		}
+	}
+
+	// esto se hace para que la variable err no esté viva al pedo en la ejecucion, ya que solo se usa en el IF
+	if err := json.Unmarshal([]byte(data), &country); err != nil {
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
+		}
+	}
+
+	url = "https://api.mercadolibre.com/currencies/"
+	final = fmt.Sprintf("%s%s", url, country.CurrencyID)
+
+	fmt.Println("CLA3:" + final)
+
+	response, err = http.Get(final)
+
+	var currency myml.Currency
+
+	if err != nil {
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
+		}
+	}
+
+	data, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
+		}
+	}
+
+	// esto se hace para que la variable err no esté viva al pedo en la ejecucion, ya que solo se usa en el IF
+	if err := json.Unmarshal([]byte(data), &currency); err != nil {
+		return &myml.General{
+			Category: nil,
+			Currency: nil,
+			Errores: &apierrors.ApiError{
+				Message: err.Error(),
+				Status:  http.StatusInternalServerError,
+			},
+		}
+	}
+
+	MyMl := myml.General{
+		Currency: &currency,
+	}
+
+	return &MyMl
 }

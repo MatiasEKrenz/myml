@@ -64,5 +64,5 @@ func GetInfo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, *general)
+	c.JSON(http.StatusOK, general)
 }

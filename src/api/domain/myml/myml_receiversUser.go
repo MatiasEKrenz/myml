@@ -17,7 +17,7 @@ func (user *User) Get() *apierrors.ApiError {
 
 	if err != nil {
 		return &apierrors.ApiError{
-			Message: err.Error(),
+			Message: "http.Get failed",
 			Status:  http.StatusInternalServerError,
 		}
 	}
@@ -32,7 +32,7 @@ func (user *User) Get() *apierrors.ApiError {
 
 	if err := json.Unmarshal([]byte(data), &user); err != nil {
 		return &apierrors.ApiError{
-			Message: err.Error(),
+			Message: "Unmarshall failed",
 			Status:  http.StatusInternalServerError,
 		}
 	}
@@ -41,7 +41,7 @@ func (user *User) Get() *apierrors.ApiError {
 
 }
 
-func (user *User) Get2(ch chan ParaCanal, userID int) *apierrors.ApiError {
+/*func (user *User) Get2(ch chan ParaCanal, userID int) *apierrors.ApiError {
 
 	urlUser := "https://api.mercadolibre.com/users/"
 	final := fmt.Sprintf("%s%d", urlUser, user.ID)
@@ -73,3 +73,4 @@ func (user *User) Get2(ch chan ParaCanal, userID int) *apierrors.ApiError {
 	return nil
 
 }
+*/

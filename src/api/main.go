@@ -28,7 +28,7 @@ func main() {
 
 	//router.GET("/users/:id", myml.User)
 
-	//router.GET("/users/:id", myml.GetUser)
+	router.GET("/user/:id", myml.GetUser)
 
 	router.GET("/myml/:id", myml.GetInfo)
 
