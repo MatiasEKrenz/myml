@@ -10,6 +10,13 @@ import (
 	"sync"
 )
 
+const (
+	urlApi  = "https://api.mercadolibre.com/"
+	urlMock = "http://localhost:8081/"
+
+	urlAUsar = urlApi
+)
+
 /*func GetUsersParams(id string) myml.User {
 
 	urlUser := "https://api.mercadolibre.com/users/" + id
@@ -96,15 +103,39 @@ func GetUserFromAPI(userID int64) (*myml.User, *apierrors.ApiError) {
 
 func GetGeneralInfo(userID int64) (*myml.General, *apierrors.ApiError) {
 
-	user, err := GetUserFromAPI(userID)
+	final := fmt.Sprintf("%susers/%d", urlAUsar, userID)
+
+	if userID == 0 {
+		return nil, &apierrors.ApiError{
+			Message: "userId id empty",
+			Status:  http.StatusBadRequest,
+		}
+	}
+
+	response, err := http.Get(final)
+	user := myml.User{}
 	if err != nil {
 		return nil, &apierrors.ApiError{
-			Message: "GetUserFromAPI failed",
+			Message: err.Error(),
 			Status:  http.StatusInternalServerError,
 		}
 	}
 
-	fmt.Println("llego hasta aca")
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, &apierrors.ApiError{
+			Message: err.Error(),
+			Status:  http.StatusInternalServerError,
+		}
+	}
+
+	// esto se hace para que la variable err no esté viva al pedo en la ejecucion, ya que solo se usa en el IF
+	if err := json.Unmarshal([]byte(data), &user); err != nil {
+		return nil, &apierrors.ApiError{
+			Message: err.Error(),
+			Status:  http.StatusInternalServerError,
+		}
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -145,8 +176,8 @@ func GetGeneralInfo(userID int64) (*myml.General, *apierrors.ApiError) {
 func getCategories(siteId string, wg *sync.WaitGroup) *myml.General {
 
 	defer wg.Done()
-	url := "https://api.mercadolibre.com/sites/"
-	final := fmt.Sprintf("%s%s/categories", url, siteId)
+
+	final := fmt.Sprintf("%ssites/%s/categories", urlAUsar, siteId)
 
 	fmt.Println("CLA1:" + final)
 
@@ -200,8 +231,7 @@ func getCurrencies(countryId string, wg *sync.WaitGroup) *myml.General {
 
 	defer wg.Done()
 
-	url := "https://api.mercadolibre.com/classified_locations/countries/"
-	final := fmt.Sprintf("%s%s", url, countryId)
+	final := fmt.Sprintf("%sclassified_locations/countries/%s", urlAUsar, countryId)
 
 	fmt.Println("CLA2:" + final)
 
@@ -244,8 +274,7 @@ func getCurrencies(countryId string, wg *sync.WaitGroup) *myml.General {
 		}
 	}
 
-	url = "https://api.mercadolibre.com/currencies/"
-	final = fmt.Sprintf("%s%s", url, country.CurrencyID)
+	final = fmt.Sprintf("%s%s", urlAUsar, country.CurrencyID)
 
 	fmt.Println("CLA3:" + final)
 
